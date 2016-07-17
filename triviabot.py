@@ -5,7 +5,6 @@ import config # Importing API keys and Bot ID
 import random
 import json
 # import sqlite3
-from trivia_questions import *
 
 # TODO: Implement drawing questions from a database
 
