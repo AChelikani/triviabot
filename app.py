@@ -1,3 +1,4 @@
+# Could be used as API to serve questions/other content to bot
 import os
 from flask import Flask
 
