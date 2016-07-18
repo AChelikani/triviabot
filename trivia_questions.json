@@ -1,0 +1,14 @@
+[
+    {
+        "question" : "What is 10+10?",
+        "answer"   : "20",
+        "category" : "Math - Basic",
+        "value"    : "$100"
+    },
+    {
+        "question" : "What element is represented by the symbol N?",
+        "answer"   : "Nitrogen",
+        "category" : "Chemistry",
+        "value"    : "$100"
+    }
+]

@@ -10,3 +10,5 @@ test_id = 1
 
 c.execute('SELECT * FROM trivia WHERE q_id=?', (test_id,))
 print c.fetchone()
+
+conn.close()

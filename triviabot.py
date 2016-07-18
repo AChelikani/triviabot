@@ -9,11 +9,16 @@ import sqlite3
 # Draws questions from database
 # Database is already set-up so queries are very fast
 
-conn = sqlite3.connect('trivia.db')
+DATABASES = {
+    "trivia" : "trivia.db"
+}
+
+conn = sqlite3.connect(DATABASES["trivia"])
 dbc = conn.cursor()
 
 dbc.execute('SELECT COUNT(*) FROM trivia')
 NUM_TRIVIA_QUESTIONS = dbc.fetchone()[0]
+conn.close()
 
 BOT_ID = config.TRIVIA_BOT_ID
 
@@ -46,7 +51,7 @@ def parse_command(command, user):
         if (clist[0] == "ask"):
             if (len(clist) > 1):
                 if (clist[1] == "random"):
-                    question, current_answer, category, current_point_value = get_random_question(NUM_TRIVIA_QUESTIONS)
+                    question, current_answer, category, current_point_value = get_random_question(NUM_TRIVIA_QUESTIONS, "trivia")
                     question_in_progress = True
                     print current_answer
                     return format_question(category, question, current_point_value)
@@ -58,6 +63,8 @@ def parse_command(command, user):
             return display_leaderboard()
         elif (command == "help"):
             return display_help()
+        elif (command == "image"):
+            return "http://www.gettyimages.pt/gi-resources/images/Homepage/Hero/PT/PT_hero_42_153645159.jpg"
         else:
             return "Invalid Command!"
     else:
@@ -126,10 +133,13 @@ def display_leaderboard():
 
 # Get a random question from the dataset
 # Return question, answer, categor, and value properties
-def get_random_question(size):
+def get_random_question(size, which_db):
+    conn = sqlite3.connect(DATABASES[which_db])
+    dbc = conn.cursor()
     c = random.randint(1,size)
     dbc.execute('SELECT * FROM trivia WHERE q_id=?', (c,))
     data = dbc.fetchone()
+    conn.close()
     q_id, question, answer, category, value = data
     return question, answer, category, value
 
@@ -150,6 +160,10 @@ def handle_command(command, channel, user):
 # Gets the username of a user given their userid
 def get_username(user):
     return slack_client.api_call("users.info", user=user)['user']['name']
+
+# Serves an image
+def serve_image():
+    return slack_client.api_call("files.upload", file="img/use_example.png", filename="use_example.png")
 
 # Gets RTM text, channel, and user
 def parse_slack_output(slack_rtm_output):

@@ -2,5 +2,4 @@
 /config.py
 /config.pyc
 /jeopardy.json
-/trivia_questions.json
 /*.db
