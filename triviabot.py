@@ -4,20 +4,16 @@ from slackclient import SlackClient
 import config # Importing API keys and Bot ID
 import random
 import json
-# import sqlite3
+import sqlite3
 
-# TODO: Implement drawing questions from a database
+# Draws questions from database
+# Database is already set-up so queries are very fast
 
-NUM_TRIVIA_QUESTIONS = 0
-trivia_question_list = []
+conn = sqlite3.connect('trivia.db')
+dbc = conn.cursor()
 
-# Currently JSON should be in the form of a list of JSONS with
-# at least: question, answer, category, and value keys
-
-with open("jeopardy.json") as json_file:
-    json_data = json.load(json_file)
-    NUM_TRIVIA_QUESTIONS = len(json_data)
-    trivia_question_list = json_data
+dbc.execute('SELECT COUNT(*) FROM trivia')
+NUM_TRIVIA_QUESTIONS = dbc.fetchone()[0]
 
 BOT_ID = config.TRIVIA_BOT_ID
 
@@ -71,17 +67,21 @@ def parse_command(command, user):
         if (compare_answers(command, current_answer)):
             current_answer = ""
             question_in_progress = False
-            update_leaderboard(user, parse_point_value(current_point_value))
-            return "Correct answer " + format_string(get_username(user)) + ". Your score is: `" + str(leaderboard[get_username(user)]) + "`."
+            update_leaderboard(user, current_point_value)
+            return correct_answer(user)
         else:
-            return "Incorrect!"
+            return incorrect_answer(user)
 
-# Removes dollar sign from question amount and converts to int
-def parse_point_value(points):
-    try:
-        return int(points[1:])
-    except:
-        return 0
+# Response for a correct answer
+def correct_answer(user):
+    username = format_string(get_username(user))
+    score = str(leaderboard[get_username(user)])
+    return "Correct answer " + username + ". Your score is: " + format_string(score) + "."
+
+# Resposne for incorrect answer
+def incorrect_answer(user):
+    username = format_string(get_username(user))
+    return "Incorrect answer " + username + "!"
 
 # Compares users answer with actual answer
 # Both strings are cleaned of whitespace, non alpha-numeric chars, and case
@@ -116,7 +116,6 @@ def update_leaderboard(user, change):
         leaderboard[user] += change
     else:
         leaderboard[user] = change
-    print leaderboard
 
 # Displays the leaderboard
 def display_leaderboard():
@@ -129,11 +128,9 @@ def display_leaderboard():
 # Return question, answer, categor, and value properties
 def get_random_question(size):
     c = random.randint(1,size)
-    data = trivia_question_list[c]
-    question = data["question"]
-    category = data["category"]
-    answer = data["answer"]
-    value = data["value"]
+    dbc.execute('SELECT * FROM trivia WHERE q_id=?', (c,))
+    data = dbc.fetchone()
+    q_id, question, answer, category, value = data
     return question, answer, category, value
 
 # Formats a string in markdown
@@ -142,7 +139,7 @@ def format_string(s):
 
 # Formats a question, category, value combo in markdown
 def format_question(category, question, value):
-    return "In `" + category + "` for `" + value + "`: `" + question + "`"
+    return "In `" + category + "` for `" + str(value) + "`: `" + question + "`"
 
 # Calls parse_command and prints output to slack
 def handle_command(command, channel, user):
