@@ -10,7 +10,8 @@ import sqlite3
 # Database is already set-up so queries are very fast
 
 DATABASES = {
-    "trivia" : "trivia.db"
+    "trivia" : "trivia.db",
+    "amceight"   : "amceight.db"
 }
 
 conn = sqlite3.connect(DATABASES["trivia"])
@@ -20,6 +21,13 @@ dbc.execute('SELECT COUNT(*) FROM trivia')
 NUM_TRIVIA_QUESTIONS = dbc.fetchone()[0]
 conn.close()
 
+conn = sqlite3.connect(DATABASES["amceight"])
+dbc = conn.cursor()
+
+dbc.execute('SELECT COUNT(*) FROM amceight')
+NUM_AMC8_QUESTIONS = dbc.fetchone()[0]
+conn.close()
+
 BOT_ID = config.TRIVIA_BOT_ID
 
 AT_BOT = "<@" + BOT_ID + ">:"
@@ -27,7 +35,8 @@ COMMANDS = {
     "ask random"   : "Triviabot will ask you a random trivia question.",
     "leaderboard"  : "Triviabot will display the current leaderboard.",
     "help"         : "Triviabot will list out all the commands.",
-    "skip"         : "Triviabot will skip the current question."
+    "skip"         : "Triviabot will skip the current question.",
+    "ask amc8"     : "Triviabot will ask you a random AMC 8 question"
 }
 
 # Global vars
@@ -55,6 +64,11 @@ def parse_command(command, user):
                     question_in_progress = True
                     print current_answer
                     return format_question(category, question, current_point_value)
+                elif (clist[1] == "amc8"):
+                    question, current_answer, category, current_point_value = get_random_question(NUM_AMC8_QUESTIONS, "amceight")
+                    question_in_progress = True
+                    print current_answer
+                    return format_link_question(category, question, current_point_value)
                 else:
                     return "Invalid use of ask!"
             else:
@@ -137,7 +151,8 @@ def get_random_question(size, which_db):
     conn = sqlite3.connect(DATABASES[which_db])
     dbc = conn.cursor()
     c = random.randint(1,size)
-    dbc.execute('SELECT * FROM trivia WHERE q_id=?', (c,))
+    query = 'SELECT * FROM ' + which_db + ' WHERE q_id=' + str(c)
+    dbc.execute(query)
     data = dbc.fetchone()
     conn.close()
     q_id, question, answer, category, value = data
@@ -150,6 +165,10 @@ def format_string(s):
 # Formats a question, category, value combo in markdown
 def format_question(category, question, value):
     return "In `" + category + "` for `" + str(value) + "`: `" + question + "`"
+
+# Format a question with link (do not place link in ticks)
+def format_link_question(category, question, value):
+    return "In `" + category + "` for `" + str(value) + "`: " + question
 
 # Calls parse_command and prints output to slack
 def handle_command(command, channel, user):
